@@ -4,6 +4,9 @@
 *.obj
 *.elf
 
+# Log files
+*.log
+
 # Precompiled Headers
 *.gch
 *.pch
@@ -37,4 +40,3 @@ Debug/
 .project
 .cproject
 .settings
-
