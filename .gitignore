@@ -40,3 +40,5 @@ Debug/
 .project
 .cproject
 .settings
+*.elf.launch
+*.ld
