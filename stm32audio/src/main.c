@@ -9,8 +9,9 @@
 
 // Private variables
 
-uint16_t SINE_TABLE[256] = {
-
+#define NUM_SAMPLES 4096
+#define LUT_SIZE 256
+uint16_t SINE_LUT[LUT_SIZE] = {
    0x0000, 0x0324, 0x0647, 0x096a, 0x0c8b, 0x0fab, 0x12c8, 0x15e2,
    0x18f8, 0x1c0b, 0x1f19, 0x2223, 0x2528, 0x2826, 0x2b1f, 0x2e11,
    0x30fb, 0x33de, 0x36ba, 0x398c, 0x3c56, 0x3f17, 0x41ce, 0x447a,
@@ -44,6 +45,7 @@ uint16_t SINE_TABLE[256] = {
    0xcf05, 0xd1ef, 0xd4e1, 0xd7da, 0xdad8, 0xdddd, 0xe0e7, 0xe3f5,
    0xe708, 0xea1e, 0xed38, 0xf055, 0xf375, 0xf696, 0xf9b9, 0xfcdc,
 };
+int freq = 600;
 
 volatile uint32_t time_var1, time_var2;
 
@@ -57,7 +59,7 @@ void init();
 
 int main(void) {
 	init();
-	int volume = 0;
+	int toggled = 0;
 
 	InitializeAudio(Audio44100HzSettings);
 	SetAudioVolume(0xCF);
@@ -71,16 +73,15 @@ int main(void) {
 			// Debounce
 			Delay(10);
 			if (BUTTON) {
-
-				// Toggle audio volume
-				if (volume) {
-					volume = 0;
+				if (toggled) {
+					toggled = 0;
 					SetAudioVolume(0xCF);
 				} else {
-					volume = 1;
+					toggled = 1;
 					SetAudioVolume(0xAF);
 				}
-
+				// Increase frequency by one half tone (*= 2^1/12)
+				freq = (int) (freq * 1.059463);
 
 				while(BUTTON){};
 			}
@@ -97,10 +98,8 @@ int main(void) {
  * provided to the audio driver.
  */
 static void AudioCallback(void *context, int buffer) {
-	static int16_t audio_buffer0[4096];
-	static int16_t audio_buffer1[4096];
-
-	int offset, err;
+	static int16_t audio_buffer0[NUM_SAMPLES];
+	static int16_t audio_buffer1[NUM_SAMPLES];
 
 	int16_t *samples;
 
@@ -114,11 +113,25 @@ static void AudioCallback(void *context, int buffer) {
 		GPIO_ResetBits(GPIOD, GPIO_Pin_13);
 	}
 
-	for(int i=0;i<4096;i++){
-		samples[i] = SINE_TABLE[i%256];
+	// User code BEGIN
+
+	int Fs = 96000;  // sampling frequency (this is a given)
+	int phase = 0;  // phase accumulator
+	float deltaPhase = (float) freq / Fs * LUT_SIZE;
+
+	// Fill samples array with sine values
+	for(int i=0; i<NUM_SAMPLES; i++){
+		samples[i] = SINE_LUT[(int) phase];
+		phase += deltaPhase;
+		// Keep phase between 0 and 256 (excluded)
+		if (phase >= (float) LUT_SIZE) {
+			phase -= (float) LUT_SIZE;
+		}
 	}
 
-	ProvideAudioBuffer(samples, 4096);
+	// User code END
+
+	ProvideAudioBuffer(samples, NUM_SAMPLES);
 }
 
 void init() {
