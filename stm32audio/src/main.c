@@ -29,13 +29,13 @@ float ampl = 0.0;
 float deltaAmpl = 0.0;
 
 // ADSR times
-float tA = 1.0;  // Attack time (seconds)
-int kA;
-float tD = 0.5;  // Decay time (seconds)
-int kD;
+float tAtt = 0.7;  // Attack time (seconds)
+int kAtt;
+float tDec = 0.5;  // Decay time (seconds)
+int kDec;
 float S = 0.5;  // Sustain level (0-1)
-float tR = 1.0;  // Release time (seconds)
-int kR;
+float tRel = 1.0;  // Release time (seconds)
+int kRel;
 
 volatile uint32_t time_var1, time_var2;
 
@@ -112,37 +112,35 @@ static void AudioCallback(void* context, int buffer)
 
         // Triggered
         if (trigger) {
-        	deltaAmpl = (maxAmpl - ampl) / kA;
+        	deltaAmpl = (maxAmpl - ampl) / kAtt;
         	trigger = false;
         }
 
         // Attack time reached
-        if (active && deltaAmpl > 0 && ampl >= maxAmpl) {
-        	deltaAmpl = (S - 1) * maxAmpl / kD;
+        else if (active && deltaAmpl > 0 && ampl >= maxAmpl) {
+        	deltaAmpl = (S * maxAmpl - ampl) / kDec;
         }
 
         // Decay time reached
-        if (active && deltaAmpl < 0 && ampl <= S * maxAmpl) {
+        else if (active && deltaAmpl < 0 && ampl <= S * maxAmpl) {
         	deltaAmpl = 0;
         	ampl = S * maxAmpl;
         }
 
         // Released
-        if (release) {
-        	deltaAmpl = -ampl / kR;
+        else if (release) {
+        	deltaAmpl = -ampl / kRel;
         	release = false;
         }
 
         // Release time reached
-        if (deltaAmpl < 0 && ampl <= 0) {
+        else if (deltaAmpl < 0 && ampl <= 0) {
         	deltaAmpl = 0;
         	ampl = 0;
         }
 
         // Update amplitude
-        if (deltaAmpl) {
-        	ampl = ampl + deltaAmpl;
-        }
+		ampl = ampl + deltaAmpl;
 
         /* SAMPLE VALUE */
     	float lowerSample = SINE_LUT[(int) phase];
@@ -174,9 +172,9 @@ void init()
 	}
 
 	// Compute attack/decay/release sample counts
-	kA = (int) tA * Fs;
-	kD = (int) tD * Fs;
-	kR = (int) tR * Fs;
+	kAtt = (int) (tAtt * Fs);
+	kDec = (int) (tDec * Fs);
+	kRel = (int) (tRel * Fs);
 
     GPIO_InitTypeDef GPIO_InitStructure;
     USART_InitTypeDef USART_InitStructure;
