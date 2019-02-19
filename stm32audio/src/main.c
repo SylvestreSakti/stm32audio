@@ -38,12 +38,57 @@ float FREQS[] = {
 	494
 };
 
+int MELODY_LENGTH = 20;
 int MELODY[] = {
-	C,
-	E,
-	G
+	CS,
+	B,
+	CS,
+	FS,
+
+	D,
+	CS,
+	D,
+	CS,
+	B,
+
+	D,
+	CS,
+	D,
+	FS,
+
+	B,
+	A,
+	B,
+	A,
+	GS,
+	B,
+	A
 };
-int MELODY_LENGTH = 3;
+int OCTAVES[] = {
+	2,
+	1,
+	2,
+	1,
+
+	2,
+	2,
+	2,
+	2,
+	1,
+
+	2,
+	2,
+	2,
+	1,
+
+	1,
+	1,
+	1,
+	1,
+	1,
+	1,
+	1
+};
 
 #define NUM_SAMPLES 2048
 #define LUT_SIZE 256
@@ -65,9 +110,9 @@ float ampl = 0.0;
 float deltaAmpl = 0.0;
 
 // ADSR times
-float tAtt = 0.7;  // Attack time (seconds)
+float tAtt = 0.3;  // Attack time (seconds)
 int kAtt;
-float tDec = 0.5;  // Decay time (seconds)
+float tDec = 0.3;  // Decay time (seconds)
 int kDec;
 float S = 0.5;  // Sustain level (0-1)
 float tRel = 1.0;  // Release time (seconds)
@@ -91,7 +136,7 @@ int main(void)
     SetAudioVolume(0xCF);
     PlayAudioWithCallback(AudioCallback, 0);
 
-    float freq = FREQS[MELODY[step]];
+    freq = OCTAVES[step] * FREQS[MELODY[step]];
 
     for (;;) {
         /*
@@ -104,12 +149,15 @@ int main(void)
             	trigger = true;
             	active = true;
                 // Increase frequency by one half tone (*= 2^1/12)
-            	freq = FREQS[MELODY[step]];
+                // freq = freq * 1.059463;
+
+            	// Use the current note and update the melody step.
+            	freq = OCTAVES[step] * FREQS[MELODY[step]];
             	step++;
-            	if (step > MELODY_LENGTH) {
+            	// Reset melody after it is finished.
+            	if (step >= MELODY_LENGTH) {
             		step = 0;
             	}
-                //freq = freq * 1.059463;
 
                 while (BUTTON) {
                 };
