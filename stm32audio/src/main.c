@@ -10,12 +10,48 @@
 
 // Private variables
 
+#define C 0
+#define CS 1
+#define D 2
+#define DS 3
+#define E 4
+#define F 5
+#define FS 6
+#define G 7
+#define GS 8
+#define A 9
+#define AS 10
+#define B 11
+
+float FREQS[] = {
+	262,
+	277,
+	294,
+	311,
+	330,
+	349,
+	370,
+	392,
+	415,
+	440,
+	466,
+	494
+};
+
+int MELODY[] = {
+	C,
+	E,
+	G
+};
+int MELODY_LENGTH = 3;
+
 #define NUM_SAMPLES 2048
 #define LUT_SIZE 256
 #define PI 3.1415926536
 int16_t SINE_LUT[LUT_SIZE];
+int step = 0;
 int Fs = 96000; // sampling frequency (this is a given)
-float freq = 300;
+float freq;
 float phase = 0; // phase accumulator
 
 // Button state variables
@@ -55,6 +91,8 @@ int main(void)
     SetAudioVolume(0xCF);
     PlayAudioWithCallback(AudioCallback, 0);
 
+    float freq = FREQS[MELODY[step]];
+
     for (;;) {
         /*
 		 * Check if user button is pressed
@@ -66,7 +104,12 @@ int main(void)
             	trigger = true;
             	active = true;
                 // Increase frequency by one half tone (*= 2^1/12)
-                freq = freq * 1.059463;
+            	freq = FREQS[MELODY[step]];
+            	step++;
+            	if (step > MELODY_LENGTH) {
+            		step = 0;
+            	}
+                //freq = freq * 1.059463;
 
                 while (BUTTON) {
                 };
